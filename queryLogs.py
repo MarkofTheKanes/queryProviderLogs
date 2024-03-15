@@ -96,8 +96,8 @@ def count_string_in_column(csv_file, column_number, search_string):
     return count
 
 def print_results(csv_file, string_count, search_string, total_logs, percentage_of):
-    print(f"There are {string_count} '{search_string}' log entries in file '{csv_file}'")
-    print(f"This is {percentage_of:.2f}% of the total log entries \n")
+    print(f"There are {string_count} '{search_string}' log entries in file '{csv_file}'.")
+    print(f"This is {percentage_of:.2f}% of the total log entries. \n")
     return None
 
 def main():
@@ -115,7 +115,9 @@ def main():
     if column_number is not None:
         print(f"The column number of '{search_column}' is: {column_number}\n")
         
-        # Count occurrences of each log severity type in the found column
+        """
+        Count the number of occurrences of each log SEVERITY type in the found column as well as those with NO SEVERITY
+        """
         sev_list = ["ERROR", "WARNING","INFO", ""]
         for search_string in sev_list:
             string_count = count_string_in_column(csv_file, column_number, search_string)
@@ -126,7 +128,7 @@ def main():
                 search_string = "NO SEVERITY"
                 print_results(csv_file, string_count, search_string, total_logs, percentage_of)
     else:
-        print(f"'{search_column}' not found in the CSV file.\n")
+        print(f"'{search_column}' not found in the CSV log file.\n")
 
 if __name__ == "__main__":
     main()
