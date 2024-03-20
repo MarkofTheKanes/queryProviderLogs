@@ -154,7 +154,7 @@ def main():
     # check user has included the csv file name to be checked.
     check_arguments(script_name)
 
-    # check file exists. If not, exit
+    # check csv log file exists. If not, exit
     check_file_exists(csv_logfile)
 
     # check is a csv formatted file.  If not, exit
