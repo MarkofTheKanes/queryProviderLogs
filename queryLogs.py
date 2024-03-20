@@ -1,5 +1,4 @@
 """
-
 Script: queryLogs.py
 v1 - 15/3/24
 Author: Mark O'Kane
@@ -9,6 +8,8 @@ TO DO:
 - output to std output and also to log file at same time
     - rename existing output files
     - create backup dir and move timestamped old files to it
+- write log entries with no severity to a separate file
+- perform analysis of these NO SEVERITY log entries
 """
 
 import csv
@@ -30,7 +31,7 @@ def check_arguments(script_name):
     """
     Check script has been called correctly. If not, return syntax for using it
     """
-    if len(sys.argv) < 1:
+    if len(sys.argv) < 2:
         print(f"\nUsage: {script_name} [csv file name]\n\nPlease provide the csv file name as an argument to this script.\n")
         sys.exit()
     else:
@@ -144,7 +145,7 @@ def main():
 
     csv_logfile = 'test_logs.csv' # Replace with your CSV log file name
     search_column = 'Severity' # Define the severity column header name to search for
-    
+       
     # Get the full path of the script
     script_path = os.path.abspath(__file__)
     # Extract the script name from the full path
