@@ -2,14 +2,11 @@
 Script: queryLogs.py
 v1 - 15/3/24
 Author: Mark O'Kane
-Purpose: Query a .csv log file from a cloud provider and return the count and percentage of total of the log severity types - ERROR, WARNING, INFO and no-severity
+Purpose: Query a csv formatted log file from a cloud provider and return the count and percentage of total of the log severity types - ERROR, WARNING, INFO and no-severity
 TO DO:
-- check is a csv formatted file - using pandas not working
-- output to std output and also to log file at same time
-    - rename existing output files
-    - create backup dir and move timestamped old files to it
+- rename existing output files, create backup dir and move timestamped old file(s) to it
 - write log entries with no severity to a separate file
-- perform analysis of these NO SEVERITY log entries
+- perform analysis of NO SEVERITY log entries
 """
 
 import csv
@@ -17,26 +14,46 @@ import os
 import sys
 import pandas as pd
 import shutil
-
-def msg(msg_text):
-    # generate msg to std output and log file
-    print("->", msg_text, "\n")
-    return None
-
-def err_msg(err_text):
-    # generate error to std output and log file
-    print("***", err_text, "***\n")
+import subprocess
 
 def check_arguments(script_name):
     """
-    Check script has been called correctly. If not, return syntax for using it
+    Check script has been called correctly. If not, return syntax for using it and exits.
     """
-    if len(sys.argv) < 2:
+    if len(sys.argv) < 1:
         print(f"\nUsage: {script_name} [csv file name]\n\nPlease provide the csv file name as an argument to this script.\n")
         sys.exit()
     else:
         return True
     
+def check_file_exists(csv_logfile):
+    """
+    Check source file to be queried exists. If not, exit with relevant error.
+    """
+    file_exists = os.path.exists(csv_logfile)
+    if not file_exists:
+        print(f"File '{csv_logfile}' not found.\n")
+        sys.exit()
+    
+def check_file_csv(csv_logfile):
+    """
+    Check source file to be queried is in csv format. If not, exit with relevant error.
+    """
+    chk_filetype = f"file '{csv_logfile}'"
+    file_type = subprocess.getoutput(chk_filetype)
+
+    if "CSV text" not in file_type:
+        print(f"*** '{csv_logfile}' is not a csv formatted file.***\nExiting script.\n")
+        sys.exit()
+
+def rename_existing_files(csv_logfile):
+    """
+    Timestamp previously generated reports and file containing no severity
+    logs and move them to Archive folder
+    """
+    print(f"Timestamp previous output file '{csv_logfile}'\n")
+    return None
+
 def prompt_commas_removed(csv_logfile):
     """
     Prompt user to ensure all ,'s have been removed from the csv. file before it is processed
@@ -47,49 +64,16 @@ def prompt_commas_removed(csv_logfile):
     print(centered_text)
     print(f"""
 Before proceeding to use this script, you need to remove/replace ALL comma's from cells within the source csv file '{csv_logfile}'. The script will return inaccurate results if this is not done first.\n
-Open the file in Excel or Libreoffice Calc and do a global replace with nothing or the character of your choice.\n
-DO NOT EDIT IT IN A TEXT EDITOR.
+Open the file in your CSV editor of choice e.g. Libreoffice Calc (DO NOT USE A TEXT EDITOR) and do a global replace with nothing or the character of your choice.
 """)
     print(centered_text,"\n")
     user_choice = input("Hit any key to continue with the script or 'n' to exit: ")
     
     if user_choice.lower() == "n":
-        err_msg("Exiting script.")
+        print(f"*** Exiting script. ***\n")
         sys.exit()
     else:
-        msg("Continuing....\n")
-
-def check_file_exists(csv_logfile):
-    """
-    check source file to be queried exists. If not, exit with relevant error.
-    """
-    file_exists = os.path.exists(csv_logfile)
-    if not file_exists:
-        print(f"File '{csv_logfile}' not found.\n")
-        sys.exit()
-    else:
-        #print(f"File '{csv_logfile}' found.\n")
-        return True    
-    
-def check_file_csv(csv_logfile):
-    """
-    TO DO check source file to be queried is in csv format. If not,exit with relevant error. using pandas does not work for some reason
-    """
-    #msg("hello")
-    # Open the file in 'r' mode
-    try:
-        pd.read_csv(csv_logfile)
-        return True
-    except pd.errors.ParserError:
-        return False
-
-def rename_existing_files(csv_logfile):
-    """
-    Timestamp previously generated reports and file containing no severity
-    logs and move them to Archive folder
-    """
-    print(f"Timestamp previous output file '{csv_logfile}'\n")
-    return None
+        print(f"\nContinuing....\n")
 
 def count_rows_without_header(csv_logfile):
     """
@@ -122,7 +106,7 @@ def find_column_number(csv_logfile, search_string):
                 return i
     return None
 
-def count_string_in_column(csv_logfile, column_number, search_string):
+def count_string_in_column(csv_logfile, column_number, search_string, nosev_file):
     """
     Counts occurrences each log severity in the specified column of a CSV 
     log file.
@@ -132,6 +116,8 @@ def count_string_in_column(csv_logfile, column_number, search_string):
         reader = csv.reader(file)
         for row in reader:
             if len(row) > column_number and row[column_number].strip() == search_string:
+                if search_string == "":
+                    print(f"Search String row is ")
                 count += 1
     return count
 
@@ -145,6 +131,7 @@ def main():
 
     csv_logfile = 'test_logs.csv' # Replace with your CSV log file name
     search_column = 'Severity' # Define the severity column header name to search for
+    nosev_file = 'no_sev.csv' # Name of output file to store log entries with no defined Severity
        
     # Get the full path of the script
     script_path = os.path.abspath(__file__)
@@ -158,7 +145,7 @@ def main():
     check_file_exists(csv_logfile)
 
     # check is a csv formatted file.  If not, exit
-    #check_file_csv(csv_logfile)
+    check_file_csv(csv_logfile)
 
     # Prompt user to ensure all ","'s are removed from the csv log file"
     prompt_commas_removed(csv_logfile)
@@ -176,7 +163,7 @@ def main():
         """
         sev_list = ["ERROR", "WARNING","INFO", ""]
         for search_string in sev_list:
-            string_count = count_string_in_column(csv_logfile, column_number, search_string)
+            string_count = count_string_in_column(csv_logfile, column_number, search_string, nosev_file)
             percentage_of = calculate_percentage(string_count, total_logs)
             if search_string != "":
                 print_results(csv_logfile, string_count, search_string, total_logs, percentage_of)
