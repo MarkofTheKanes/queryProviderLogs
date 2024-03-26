@@ -5,7 +5,6 @@ Author: Mark O'Kane
 Purpose: Query a csv formatted log file from a cloud provider and return the count and percentage of total of the log severity types - ERROR, WARNING, INFO and no-severity
 TO DO:
 - check required modules are installed. if not, install them automatically
-- writing to log
 - write log entries with no severity to a separate file
 - perform analysis of NO SEVERITY log entries
 """
@@ -22,17 +21,6 @@ import logging
 # Configure logging to write to a file
 log_file_out = 'logfile.log'
 logging.basicConfig(filename=log_file_out, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Write log messages
-"""
-logging.debug('This is a debug message')
-logging.info('This is an info message')
-logging.warning('This is a warning message')
-logging.error('This is an error message')
-logging.critical('This is a critical message')
-"""
-#logging.info("New time stamped file name to be used is '%s'", tsed_file_name)
-
 
 def check_arguments(file_name):
     """
@@ -150,6 +138,7 @@ def create_new_output_files(results_out_file, no_sev_file):
             with open(file_names, "w"):
                 logging.info("File '%s' has been created for writing to later.", file_names)
                 pass
+    
 
 def count_rows_without_header(csvlog_filename):
     """
@@ -176,16 +165,15 @@ def find_column_number(csvlog_filename, col_search_string):
             if column_name.strip() == col_search_string:
                 logging.info("The Severity column number is '%s'. Column numberings start at 0 (zero)", col_number)
                 return col_number
-    return None
 
 def calculate_percentage(part, total):
     """
-    Calculates the percentage of part in relation to total.
+    Calculates the percentage of the number of each log sev entry part in relation to the total number entries.
     """
     logging.info("Calculating percentage of '%s' as total of all log entries '%s'", part, total)
     return (part / total) * 100
 
-def count_string_in_column(csvlog_filename, string_col_number, search_string_val):
+def count_string_in_column(no_sev_file , csvlog_filename, string_col_number, search_string_val):
     """
     Counts occurrences each log severity in the specified column of a CSV log file as well as those with no defined severity
     """
@@ -195,20 +183,30 @@ def count_string_in_column(csvlog_filename, string_col_number, search_string_val
         reader = csv.reader(file)
         for row in reader:
             if len(row) > string_col_number and row[string_col_number].strip() == search_string_val:
-                count += 1
+                # add rows with no defined severity to output file
+                if search_string_val == "":
+                    #print(f"row = ", row)
+                    # open the no_sev_file to append the rows to
+                    with open(no_sev_file, 'a', newline='') as csvfile:
+                        csv_writer = csv.writer(csvfile)
+                        logging.info("Opening file '%s' to append the log entry with no defined severity.", no_sev_file)
+
+                        # write row to new csv file
+                        csv_writer.writerow(row)
+                        logging.info("Writing log entry with no defined severity to file '%s'.", no_sev_file)
+    count += 1
     logging.info("Total number of severity type '%s' is '%s'", search_string_val, count)
     return count
 
-def print_results(csvlog_filename, string_count, search_string, total_logs, percentage_of):
+def print_results_to_stdout(csvlog_filename, string_count, search_string, total_logs, percentage_of):
     print(f"There are {string_count} '{search_string}' log entries in file '{csvlog_filename}'.")
     print(f"This is {percentage_of:.1f}% of the total log entries of '{total_logs}'. \n")
 
-def print_to_log(results_out_file, csvlog_filename, string_count, search_string, total_logs, percentage_of):  
+def print_results_to_log(results_out_file, csvlog_filename, string_count, search_string, total_logs, percentage_of):  
     # write to the results file
     with open(results_out_file, "a") as file1:
         logging.info("Results file '%s' has been opened for writing to.", results_out_file)
         file1.write("There are " + str(string_count) + " Severity type '" + search_string + "' entries in the file '" + csvlog_filename + "'.\n")
-        #file1.write("This is " + str(percentage_of:.1f) + " of the total log entries of " + total_logs + "in the file\n")
         file1.close()
         logging.info("Results file '%s' has been closed.", results_out_file)
     return None
@@ -241,9 +239,8 @@ def main():
     # Prompt user to ensure all ","'s are removed from the csv log file"
     prompt_commas_removed(csv_logfile)
     
-    #rename_existing_files(csv_logfile)
-    #rename_existing_files(log_file_out, results_out, nosev_file,backup_dir)
-    rename_existing_files(results_out, nosev_file,backup_dir)
+    #timestamp and backup previously generated files
+    rename_existing_files(results_out, nosev_file, backup_dir)
 
     # create new output files for appending info to
     create_new_output_files(results_out, nosev_file)
@@ -261,21 +258,21 @@ def main():
         sev_list = ["ERROR", "WARNING","INFO", ""]
         for search_string in sev_list:
             #string_count = count_string_in_column(csv_logfile, column_number, search_string, nosev_file)
-            string_count = count_string_in_column(csv_logfile, column_number, search_string)
+            string_count = count_string_in_column(nosev_file, csv_logfile, column_number, search_string)
 
             percentage_of = calculate_percentage(string_count, total_logs)
             if search_string != "":
-                print_results(csv_logfile, string_count, search_string, total_logs, percentage_of)
-                print_to_log(results_out, csv_logfile, string_count, search_string, total_logs, percentage_of)
+                print_results_to_stdout(csv_logfile, string_count, search_string, total_logs, percentage_of)
+                print_results_to_log(results_out, csv_logfile, string_count, search_string, total_logs, percentage_of)
             else:
                 # added this to so I can print "No Severity" in the results message
                 search_string = "with no defined severity"
-                print_results(csv_logfile, string_count, search_string, total_logs, percentage_of)
-                print_to_log(results_out, csv_logfile, string_count, search_string, total_logs, percentage_of)
+                print_results_to_stdout(csv_logfile, string_count, search_string, total_logs, percentage_of)
+                print_results_to_log(results_out, csv_logfile, string_count, search_string, total_logs, percentage_of)
     else:
         print(f"'{search_column}' not found in the CSV log file.\n")
-  
-    print(f"Script has successfully finished running. Results have been written to the file '{results_out}' and log entries with no defined severity have been written to '{nosev_file}'")
+
+    print(f"Script has successfully finished running. Results have been written to the file '{results_out}' and log entries with no defined severity have been written to the file '{nosev_file}'")
 
 if __name__ == "__main__":
     main()
