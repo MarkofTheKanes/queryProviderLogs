@@ -205,13 +205,16 @@ def print_results_to_stdout(csvlog_filename, string_count, search_string, total_
     print(f"There are {string_count} '{search_string}' log entries in file '{csvlog_filename}'.")
     print(f"This is {percentage_of:.1f}% of the total log entries of '{total_logs}'. \n")
 
-def print_results_to_log(results_out_file, csvlog_filename, string_count, search_string, total_logs, percentage_of):  
+def print_results_to_log(results_out_file, csvlog_filename, string_count, search_string, total_logs, percentage_of): 
+    """ first format percentage_of to 1 decimal place so looks better in results file """
+    formatted_percentage = f"{percentage_of:.1f}%"
+    
     # write to the results file
     with open(results_out_file, "a") as file1:
         logging.info("Results file '%s' has been opened for writing to.", results_out_file)
         file1.write("There are " + str(string_count) + " Severity type '" + search_string + "' entries in the file '" + csvlog_filename + "'.\n")
-        file1.write("This is " + str(percentage_of) + " of the total log entries of " + str(total_logs) + ".\n")
-        file1.close()
+        file1.write("This is " + str(formatted_percentage) + " of the total log entries of " + str(total_logs) + ".\n")
+        #file1.close()
         logging.info("Results file '%s' has been closed.", results_out_file)
     return None
 
