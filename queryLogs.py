@@ -5,14 +5,12 @@ Author: Mark O'Kane
 Purpose: Query a csv formatted log file from a cloud provider and return the count and percentage of total of the log severity types - ERROR, WARNING, INFO and no-severity
 TO DO:
 - check required modules are installed. if not, install them automatically
-- write log entries with no severity to a separate file
 - perform analysis of NO SEVERITY log entries
 """
 
 import csv
 import os
 import sys
-import pandas as pd
 import shutil
 import subprocess
 from datetime import datetime
@@ -26,7 +24,7 @@ def check_arguments(file_name):
     """
     Check script has been called correctly. If not, return syntax for using it and exits.
     """
-    if len(sys.argv) < 1:
+    if len(sys.argv) < 2:
         print(f"\nUsage: {file_name} [csv log file name]\n\nPlease provide the csv file name as an argument to this script.\n")
         logging.info("No argument provided with '%s'. Exited script", file_name)
         sys.exit()
@@ -136,9 +134,8 @@ def create_new_output_files(results_out_file, no_sev_file):
     for file_names in [results_out_file, no_sev_file]:
         if not os.path.exists(file_names):
             with open(file_names, "w"):
-                logging.info("File '%s' has been created for writing to later.", file_names)
-                pass
-    
+                logging.info("File '%s' has been created for writing too later.", file_names)
+                pass   
 
 def count_rows_without_header(csvlog_filename):
     """
@@ -214,13 +211,15 @@ def print_results_to_log(results_out_file, csvlog_filename, string_count, search
 def main():
     os.system('clear')
 
-    # set Variables
-    csv_logfile = 'test_logs.csv' # Replace with your CSV log file name
-    search_column = 'Severity' # Define the severity column header name to search for
-    
+    # define Variables
+    search_column = 'Severity' # Define severity column header name to search for
     results_out = 'results.txt'
     nosev_file = 'no_sev.csv' # Name of output file to store log entries with no defined Severity
     backup_dir = 'Backup'
+
+    # Get the neame of the csv log file to parse
+    #csv_logfile = 'test_logs.csv' # Replace with your CSV log file name
+    csv_logfile = sys.argv[0]
        
     # Get the full path of the script
     script_path = os.path.abspath(__file__)
