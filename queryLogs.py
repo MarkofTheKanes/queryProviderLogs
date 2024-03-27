@@ -33,7 +33,6 @@ def check_arguments(file_name):
         sys.exit()
     else:
         csv_logfile = sys.argv[1]
-        print(f"csv_logfile = ", sys.argv[1])
         return csv_logfile
 
 def check_file_exists(csvlog_filename):
@@ -175,10 +174,6 @@ def count_string_in_column(csvlog_filename, string_col_number, search_string_val
     """
     Counts occurrences each log severity in the specified column of a CSV log file as well as those with no defined severity
     """
-    #print(f"no_sev_file =", no_sev_file)
-    #print(f"csvlog_filename =", csvlog_filename)
-    #print(f"string_col_number =", string_col_number)
-    print(f"search_string_val2 =", search_string_val)
     logging.info("Counting number of occurrences for severity type '%s'", search_string_val)
     count = 0
     with open(csvlog_filename, 'r', newline='') as file:
@@ -188,7 +183,6 @@ def count_string_in_column(csvlog_filename, string_col_number, search_string_val
                 count += 1
                 # add rows with no defined severity to output file
                 if search_string_val == "":
-                    #print(f"row = ", row)
                     # open the no_sev_file to append the rows to
                     with open(no_sev_file, 'a', newline='') as csvfile:
                         csv_writer = csv.writer(csvfile)
@@ -197,7 +191,6 @@ def count_string_in_column(csvlog_filename, string_col_number, search_string_val
                         # write row to new csv file
                         csv_writer.writerow(row)
                         logging.info("Writing log entry with no defined severity to file '%s'.", no_sev_file)
-            #print(f"Count = ", count)
         logging.info("Total number of severity type '%s' is '%s'", search_string_val, count)
     return count
 
@@ -217,6 +210,7 @@ def print_results_to_log(results_out_file, csvlog_filename, string_count, search
     with open(results_out_file, "a") as file1:
         logging.info("Results file '%s' has been opened for writing to.", results_out_file)
         file1.write("There are " + str(string_count) + " Severity type '" + search_string + "' entries in the file '" + csvlog_filename + "'.\n")
+        file1.write("This is " + str(percentage_of) + " of the total log entries of " + str(total_logs) + ".\n")
         file1.close()
         logging.info("Results file '%s' has been closed.", results_out_file)
     return None
@@ -237,7 +231,6 @@ def main():
     
     # check user has included the csv file name to be checked.
     csv_logfile = check_arguments(script_name)
-    print(f"csv_logfile2 = ", csv_logfile)
 
     # check csv log file exists. If not, exit
     check_file_exists(csv_logfile)
@@ -261,12 +254,10 @@ def main():
     column_number = find_column_number(csv_logfile, search_column)
     
     if column_number is not None:       
-        print(f"column num2 =", column_number)
         """
         Count the number of occurrences of each log SEVERITY type in the found column as well as those with NO SEVERITY
         """
         sev_list = ["ERROR", "WARNING","INFO", ""]
-        print(sev_list)
         for s_string in sev_list:
             string_count = count_string_in_column(csv_logfile, column_number, s_string, nosev_file)
             percentage_of = calculate_percentage(string_count, total_logs)
