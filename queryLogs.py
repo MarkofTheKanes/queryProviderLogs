@@ -5,6 +5,7 @@ Author: Mark O'Kane
 Purpose: Query a csv formatted log file from a cloud provider and return the count and percentage of total of the log severity types - ERROR, WARNING, INFO and no-severity
 TO DO:
 - check required modules are installed. if not, install them automatically
+- write a wrapper to call this for >1 csv log files to be analysed
 - perform analysis of NO SEVERITY log entries
 """
 
@@ -137,12 +138,18 @@ Open the file in your CSV editor of choice e.g. Libreoffice Calc (DO NOT USE A T
         print(f"\nContinuing....\n")
         logging.info("User entered '%s'. Executing the script.", user_choice)
 
-def create_new_output_files(results_out_file, no_sev_file):
+def create_new_output_files(results_out_file, no_sev_file, csvlog_filename):
     for file_names in [results_out_file, no_sev_file]:
         if not os.path.exists(file_names):
             with open(file_names, "w"):
                 logging.info("File '%s' has been created for writing too later.", file_names)
                 pass   
+    # write column headers of src csv file to no_sev_file
+    with open(csvlog_filename, 'r', newline='') as csvfile_in, open(no_sev_file, 'w', newline='') as csvfile_out:
+        reader = csv.reader(csvfile_in)
+        writer = csv.writer(csvfile_out)
+        headers = next(reader)
+        writer.writerow(headers)            
 
 def count_rows_without_header(csvlog_filename):
     """
@@ -210,7 +217,7 @@ def print_results_to_stdout(csvlog_filename, string_count, search_string, total_
 def print_results_to_file(results_out_file, csvlog_filename, string_count, search_string, total_logs, percentage_of): 
     # print results to defined results file
     logging.info("Printing results to results file")
-    
+
     """ first format percentage_of to 1 decimal place so looks better in results file """
     formatted_percentage = f"{percentage_of:.1f}%"
     
@@ -252,7 +259,7 @@ def main():
     rename_existing_files(results_out, nosev_file, backup_dir)
 
     # create new output files for appending info to
-    create_new_output_files(results_out, nosev_file)
+    create_new_output_files(results_out, nosev_file, csv_logfile)
     
     # required in order to calculate percentages
     total_logs = count_rows_without_header(csv_logfile)
