@@ -18,9 +18,6 @@ import logging
 
 # Configure logging to write to a file
 log_file_out = 'logfile.log'
-if os.path.exists(log_file_out):
-    # Remove (delete) the file
-    os.remove(log_file_out)
 logging.basicConfig(filename=log_file_out, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def check_arguments(file_name):
@@ -122,13 +119,16 @@ def prompt_commas_removed(csvlog_filename):
     console_width = shutil.get_terminal_size().columns
     centered_text = top_and_bottom.center(console_width)  
     print(centered_text)
+
+    # print the message to stdout
     print(f"""
 Before proceeding to use this script, you need to remove/replace ALL comma's from cells within the source csv file '{csvlog_filename}'. The script will return inaccurate results if this is not done first.\n
 Open the file in your CSV editor of choice e.g. Libreoffice Calc (DO NOT USE A TEXT EDITOR) and do a global replace with nothing or the character of your choice.
 """)
     print(centered_text,"\n")
-    user_choice = input("Hit any key to continue with the script or 'n' to exit: ")
+    user_choice = input("Hit Enter to continue or 'n' to exit: ")
     
+    # read in users selection to continue or otherwise
     if user_choice.lower() == "n":
         print(f"\n*** Exiting script. ***\n")
         logging.info("User entered '%s'. Exiting script", user_choice)
@@ -202,19 +202,23 @@ def calculate_percentage(part, total):
     return (part / total) * 100
 
 def print_results_to_stdout(csvlog_filename, string_count, search_string, total_logs, percentage_of):
+    # print results to stdout
+    logging.info("Printing results to stdout")
     print(f"There are {string_count} '{search_string}' log entries in file '{csvlog_filename}'.")
     print(f"This is {percentage_of:.1f}% of the total log entries of '{total_logs}'. \n")
 
-def print_results_to_log(results_out_file, csvlog_filename, string_count, search_string, total_logs, percentage_of): 
+def print_results_to_file(results_out_file, csvlog_filename, string_count, search_string, total_logs, percentage_of): 
+    # print results to defined results file
+    logging.info("Printing results to results file")
+    
     """ first format percentage_of to 1 decimal place so looks better in results file """
     formatted_percentage = f"{percentage_of:.1f}%"
     
-    # write to the results file
+    # Open the file and write to it
     with open(results_out_file, "a") as file1:
         logging.info("Results file '%s' has been opened for writing to.", results_out_file)
         file1.write("There are " + str(string_count) + " Severity type '" + search_string + "' entries in the file '" + csvlog_filename + "'.\n")
         file1.write("This is " + str(formatted_percentage) + " of the total log entries of " + str(total_logs) + ".\n")
-        #file1.close()
         logging.info("Results file '%s' has been closed.", results_out_file)
     return None
 
@@ -266,12 +270,12 @@ def main():
             percentage_of = calculate_percentage(string_count, total_logs)
             if s_string != "":
                 print_results_to_stdout(csv_logfile, string_count, s_string, total_logs, percentage_of)
-                print_results_to_log(results_out, csv_logfile, string_count, s_string, total_logs, percentage_of)
+                print_results_to_file(results_out, csv_logfile, string_count, s_string, total_logs, percentage_of)
             else:
                 # added this to so I can print "No Severity" in the results message
                 s_string = "with no defined severity"
                 print_results_to_stdout(csv_logfile, string_count, s_string, total_logs, percentage_of)
-                print_results_to_log(results_out, csv_logfile, string_count, s_string, total_logs, percentage_of)
+                print_results_to_file(results_out, csv_logfile, string_count, s_string, total_logs, percentage_of)
     else:
         print(f"'{search_column}' not found in the CSV log file.\n")
 
