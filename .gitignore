@@ -1,6 +1,5 @@
 logfile.log
-no_sev.csv
-results.txt
-Backup
-queryLogs (copy).py
-queryLogs (another copy).py
+*Approved*.csv
+Sample RBC WM Education Disclosure.csv
+SrcExportFile_*
+SrcExportFile-Approved_*
